@@ -49,7 +49,9 @@ def rule_evaluator(event,context):
 
     min_input_length =   np.max([float(strategy_params['technical_inidcators']['fast_ema']),float(strategy_params['technical_inidcators']['slow_ema'])])
 
-    
+    '''
+        for each stock
+    '''
     for stock in stock_list:   
 
         if len(list(stock_prices[stock]['closes'].values))<min_input_length:
@@ -73,15 +75,37 @@ def rule_evaluator(event,context):
                         else -1 if float(indicator.loc[index]) < 0 and float(indicator.loc[index-1]) > 0  
                         else 0 for index in indicator.index[1:]]
 
-        '''Check for signal'''
+        '''
+            if signal not 0, fetch all users 
+            GET /user_stocks (argument: stock id)
+        '''
         if signal[-1] is not 0:
-            '''If Positive Signal'''
-            if signal[-1] == 1:
-                
 
-
+            '''
+                If Non Zero Signal
+                Make Transaction with 
+                POST /transactions (args: user_id, stock_id)
+            '''    
+            
+            '''Go Long / BUY Stock'''
             '''Go Short / SELL Stock'''
-            if signal[-1] == -1:
+            
+            while True:
+            try:
+                exchange.dapiPrivate_post_order({'symbol':symbol,
+                                                'type':"MARKET",
+                                                'side':close_side,
+                                                'positionSide':'BOTH' ,
+                                                'quantity':open_position_amount})
+                break
+            except Exception as e:
+                print("Error while trying to close open order for "+str(asset_name)+": "+str(e))
+                print("Retrying in 60 Seconds...")
+                time.sleep(60)
+        
+
+            
+
 
                 
 
@@ -90,8 +114,9 @@ def rule_evaluator(event,context):
 
 
 
-''''''
-GET /user_stocks (argument: stock id).
+'''
+    
+'''
 
 
 
