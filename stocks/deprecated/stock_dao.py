@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship, backref
-from db import Base
+from stocks.deprecated.db import Base
 
 
 class StockDAO(Base):

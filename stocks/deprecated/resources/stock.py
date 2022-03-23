@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Flask, json, jsonify, Response
 from daos.stock_dao import StockDAO
-from db import Session
+from stocks.deprecated.db import Session
 
 
 class Stock:

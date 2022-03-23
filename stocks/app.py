@@ -1,28 +1,74 @@
-from flask import Flask, request
-
-from db import Base, engine
-from resources.stock import Stock
+from flask import Flask, request, jsonify
+from database import db
+from bson import ObjectId
+from datetime import datetime
 
 app = Flask(__name__)
-app.config["DEBUG"] = True
-Base.metadata.create_all(engine)
 
 
-@app.route('/stocks', methods=['POST'])
+@app.route("/stocks", methods=["POST"])
 def create_stock():
-    req_data = request.get_json()
-    return Stock.create(req_data)
+    '''
+    Endpoint to create stock
+    '''
+    body_data = request.get_json()
+    # return status 400 if request contains no body
+    if not body_data:
+        return "No body", 400
+    # define the necessary data
+    required_data_list = ["stock_id", "name", "price", "ticker"]
+    # check for necessary data, return status 400 is data is not available
+    for required_data in required_data_list:
+        if required_data not in body_data.keys():
+            return "No {} in body".format(required_data), 400
+    # create object
+    data_object = {data_name:body_data[data_name] for data_name in required_data_list}
+    db.stocks.insert_one(data_object)
+    data_object["_id"] = str(data_object["_id"])
+    return data_object, 201
 
 
-@app.route('/stocks', methods=['GET'])
-def get_stocks():
-    return Stock.get()
+@app.route("/stocks", methods=["GET"])
+def get_stocsk():
+    '''
+    Endpoint to retrieve all stocks
+    '''
+    # get all stocks
+    objects = db.stocks.find()
+    # return dict with all stocks
+    return_list = []
+    # convert the ObjectId and append to return_list
+    for object in objects:
+        object["_id"] = str(object["_id"])
+        return_list.append(object)
+    return jsonify(return_list), 200
 
 
-@app.route('/deliveries/<stock_id>', methods=['PUT'])
-def update_stock(stock_id):
-    stock_id = request.args.get('stock_id')
-    name = request.args.get('name')
-    price = request.args.get('price')
-    ticker = request.args.get('ticker')
-    return Stock.update(stock_id, name, price, ticker)
+
+@app.route("/stocks/<stock_id>", methods=["PUT"])
+def update_stock():
+    request_data = request.get_json()
+    # return status 400 is necessary data is not available
+    if "stock_id" not in request_data:
+        return "No stock_id", 400
+    if "name" not in request_data:
+        return "No name", 400
+    if "price" not in request_data:
+        return "No price", 400
+    if "ticker" not in request_data:
+        return "No ticker", 400
+    # try to find the object, return status 400 is object_id is not correct
+    try:
+        object = db.stocks.find_one({"_id": ObjectId(request_data["stock_id"])})
+    except:
+        return "Incorrect stock_id", 400
+
+    # update object
+    db.stocks.update_one({"_id": ObjectId(request_data["stock_id"])}, {
+        "$set": {
+            "name": request_data["name"],
+            "price": request_data["price"],
+            "ticker": request_data["ticker"]
+        }
+    })
+    return "Stock updated!", 202

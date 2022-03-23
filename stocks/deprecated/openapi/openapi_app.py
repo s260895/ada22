@@ -1,7 +1,7 @@
 import logging
 import connexion
 from connexion.resolver import RestyResolver
-from db import Base, engine
+from stocks.deprecated.db import Base, engine
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__, specification_dir="openapi/")
