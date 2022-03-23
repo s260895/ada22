@@ -4,7 +4,7 @@ services:
   users-ms-api:
     container_name: users-ms-api
     build:
-      context: ./
+      context: ./users-ms/
     depends_on:
       - "users-ms-pgdb"
       - "users-ms-redis"
