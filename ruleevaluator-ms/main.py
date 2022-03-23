@@ -11,14 +11,13 @@ def rule_evaluator(event,context):
 
     '''
 
-
     '''
         Stock List and Corresponding Prices to be fetched from GET /stocks
     '''
-    stock_list=['BTCUSDT','ETHUSDT','BNBUSDT']
+    # stock_list=['BTCUSDT','ETHUSDT','BNBUSDT']
     
-    with open('sample_output.pkl', 'rb') as f:
-        stock_prices = pickle.load(f)
+    # with open('sample_output.pkl', 'rb') as f:
+    #     stock_prices = pickle.load(f)
 
 
     '''Hard Coded Parameters: 
