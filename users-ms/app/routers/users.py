@@ -1,14 +1,12 @@
-from typing import List
 from models import User, UserBroker
 from schemas import UserOut_Pydantic, UserIn_Pydantic, UserBrokerIn_Pydantic, UserBrokerOut_Pydantic, Status
-from utils.security import authenticate_user
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from tortoise.contrib.fastapi import HTTPNotFoundError
 from tortoise.exceptions import DoesNotExist
 from utils.exceptions import not_found
 
 
-user_router = APIRouter(tags=["users"], dependencies=[Depends(authenticate_user)])
+user_router = APIRouter(tags=["users"])
 
 
 """User endpoints"""
