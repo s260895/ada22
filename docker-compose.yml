@@ -5,8 +5,10 @@ services:
     container_name: users-ms-api
     build:
       context: ./users-ms/
+    ports:
+    - "80:80"
     depends_on:
-      - "users-ms-pgdb"
+    - "users-ms-pgdb"
 
   users-ms-pgdb:
     container_name: users-ms-pgdb
