@@ -163,21 +163,25 @@ def rule_evaluator(event,context):
                     # POST /transactions, body = new_transaction
 
                     # 2. Close an UserStock in userstock-ms
+                    selected_user_stock = [user_stock_db for user_stock_db in user_stocks_db if user_stock_db['user_id'] == user_id][0]
+
+                    selected_index = user_stocks_db.index(selected_user_stock)
+                    
+                    selected_user_stock['date_closed'] = datetime.now()
+                    selected_user_stock['close_price'] = 'Fetched by price fetcher?'
 
 
+                    user_stocks_db[selected_index] = selected_user_stock
 
 
+                    # new_user_stock = {
+                    #     "stock_id": 1,
+                    #     "user_id": user_id,
+                    #     "date_opened": datetime.now(),
+                    #     "date_closed": None,
+                    #     "open_price": stock_db['price'],
+                    #     "close_price": stock_db['price']
+                    # }
 
-
-
-'''
-    
-'''
-
-
-
-    '''
-    update through PUT /stocks/<stock_id>
-    '''
-    return df_dict
+    return user_stocks_db
     
