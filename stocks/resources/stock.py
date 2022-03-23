@@ -29,13 +29,13 @@ class Stock:
             return jsonify({'message': f'Database not found'}), 404
       
     @staticmethod
-    def update(stock_id, body):
+    def update(stock_id, name, price, ticker):
         session = Session()
         stock = session.query(StockDAO).filter(StockDAO.stock_id == stock_id).first()
         if stock:
-            stock.name = body['name']
-            stock.price = body['price']
-            stock.ticker = body['ticker']
+            stock.name = name
+            stock.price = price
+            stock.ticker = ticker
             session.close()
             return jsonify({'message:': f'Stock at id {stock_id} updated'}), 200
         else:
