@@ -1,4 +1,3 @@
-import aioredis
 from routers.users import user_router
 from utils import config
 from fastapi import FastAPI
@@ -18,25 +17,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"])
-
-
-@app.on_event("startup")
-async def api_startup():
-    """
-    Create redis connection pool.
-    Tortoise is implicitly activated.
-    """
-    config.redis = await aioredis.from_url(config.REDIS_URL)
-
-
-@app.on_event("shutdown")
-async def api_shutdown():
-    """
-    Close redis connection pool.
-    Tortoise is implicitly deactivated.
-    """
-    config.redis.close()
-    await config.redis.wait_closed()
 
 
 register_tortoise(
