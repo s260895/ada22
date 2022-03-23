@@ -1,0 +1,34 @@
+# # [START functions_ci_cd_cloud_build]
+# steps:
+# - name: 'gcr.io/cloud-builders/npm'
+#   args: ['install']
+#   dir: '/'
+# - name: 'gcr.io/cloud-builders/npm'
+#   args: ['test']
+#   dir: '/'
+# - name: 'gcr.io/cloud-builders/gcloud'
+#   args: ['functions', 
+#           'deploy',
+#           'function-2',
+#           '--trigger-topic=TRIGGER_TOPIC', 
+#           '--runtime=python39', 
+#           '--entry-point=static_bot_check', 
+#          ]
+#   dir: '/'
+# # [END functions_ci_cd_cloud_build]
+
+steps:
+- name: 'python'
+  entrypoint: /bin/sh
+  # Run pip install and pytest in the same build step
+  # (pip packages won't be preserved in future steps!)
+  args: [-c, 'pip install -r requirements.txt']
+  # dir: '/'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['functions', 
+          'deploy', 
+          'function-2', 
+          '--trigger-topic=static_bot_check', 
+          '--runtime=python39', 
+          '--entry-point=static_bot']
+  dir: '/'
