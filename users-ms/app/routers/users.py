@@ -42,8 +42,11 @@ async def delete_user(user_id: int):
 """UserBroker endpoints"""
 @user_router.post("/users/{user_id}/broker", response_model=UserBrokerOut_Pydantic, description="Create a broker for a user.")
 async def create_user_broker(user_id: int, user_broker: UserBrokerIn_Pydantic):
+    import sys
+    print(user_broker.dict(), file=sys.stderr)
     user_broker_dict = user_broker.dict(exclude_unset=True)
     user_broker_dict["user_id"] = user_id
+    print(user_broker_dict, file=sys.stderr)
     new_user_broker = await UserBroker.create(**user_broker_dict)
     return await UserBrokerOut_Pydantic.from_tortoise_orm(new_user_broker)
 
