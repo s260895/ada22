@@ -13,8 +13,7 @@ def price_fetcher(event,context):
     '''
         Stock List to be fetched from GET /stocks
     '''
-    stock_list=
-    ['BTCUSDT','ETHUSDT','BNBUSDT']
+    stock_list= ['BTCUSDT','ETHUSDT','BNBUSDT']
 
 
     '''Hard Coded Parameters: 
