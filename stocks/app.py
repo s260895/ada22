@@ -29,7 +29,7 @@ def create_stock():
 
 
 @app.route("/stocks", methods=["GET"])
-def get_stocsk():
+def get_stocks():
     '''
     Endpoint to retrieve all stocks
     '''
