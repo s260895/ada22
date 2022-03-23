@@ -34,7 +34,7 @@ def get_user_stocks(user_id):
     Endpoint to retrieve user_stocks for a certain user
     '''
     # get all user_stocks
-    objects = db.userstocks.find({"user_id": int(user_id), "date_closed": None})
+    objects = db.userstocks.find({"user_id": int(user_id)})
     # return dict with all userstocks in a strange way
     return_list = []
     # convert the ObjectId and append to return_list
