@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  mongodb-ms:
+    image: mongo
+    volumes:
+    - ../mongo-volume:/data/db
+    ports:
+    - "27017:27017"
+  userstock-ms:
+    build:
+      context: ./userstock-ms
+    depends_on:
+    - mongodb-ms
+    environment:
+      - MONGO_HOST=mongodb://mongodb-ms:27017/
+    ports:
+      - "5001:5000"
