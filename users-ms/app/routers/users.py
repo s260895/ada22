@@ -80,7 +80,7 @@ async def update_user_broker(user_id: int, updated_user_broker: UserBrokerIn_Pyd
 
 @user_router.delete("/users/{user_id}/broker", response_model=Status, responses={404: {"model": HTTPNotFoundError}}, description="Delete a user's broker.")
 async def delete_user(user_id: int):
-    broker_delete = UserBroker.filter(user_id=user_id).delete()
+    broker_delete = await UserBroker.filter(user_id=user_id).delete()
 
     if not broker_delete:
         raise not_found
