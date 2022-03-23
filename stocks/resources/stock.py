@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Flask, json, jsonify, request
+from flask import Flask, json, jsonify, Response
 from daos.stock_dao import StockDAO
 from db import Session
 
@@ -14,33 +14,30 @@ class Stock:
         session.commit()
         session.refresh(stock)
         session.close()
-        return jsonify({'stock_id': stock.id}), 200
+        return jsonify({'message': f'stock with id {stock.stock_id} created'}), 200
 
     @staticmethod
     def get():
         session = Session()
-        stock = session.query(StockDAO)
+        stock = session.query(StockDAO).all()
         if stock:
-           stock =
            session.close()
-           return #what do i put here?
+           return json.dumps(stock), 200
+           
         else:
-            session.close()
+            session.close() 
             return jsonify({'message': f'Database not found'}), 404
       
     @staticmethod
-    def put(stock_id):
+    def update(stock_id, body):
         session = Session()
-        stock = session.query(StockDAO).filter(StockDAO.id == stock_id).first()
-
+        stock = session.query(StockDAO).filter(StockDAO.stock_id == stock_id).first()
         if stock:
-            text_out = {
-                "name:": stock.name,
-                "price": stock.price,
-                "ticker": stock.ticker,
-            }
+            stock.name = body['name']
+            stock.price = body['price']
+            stock.ticker = body['ticker']
             session.close()
-            return jsonify(text_out), 200
+            return jsonify({'message:': f'Stock at id {stock_id} updated'}), 200
         else:
             session.close()
             return jsonify({'message': f'There is no stock with id {stock_id}'}), 404

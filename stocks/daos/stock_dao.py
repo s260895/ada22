@@ -5,7 +5,7 @@ from db import Base
 
 class StockDAO(Base):
     __tablename__ = 'stock'
-    id = Column(Integer, primary_key=True)  # Auto generated primary key
+    stock_id = Column(Integer, primary_key=True)  # Auto generated primary key
     name = Column(String)
     price = Column(String)
     ticker = Column(String)
