@@ -1,17 +1,17 @@
 version: "3.9"
 
 services:
-  users-ms-api:
-    container_name: users-ms-api
+  user-ms:
+    container_name: user-ms
     build:
-      context: ./users-ms/
+      context: ./user-ms
     ports:
     - "80:80"
     depends_on:
-    - "users-ms-pgdb"
+    - user-ms-pgdb
 
-  users-ms-pgdb:
-    container_name: users-ms-pgdb
+  user-ms-pgdb:
+    container_name: user-ms-pgdb
     image: postgres:latest
     ports:
     - "5432:5432"
@@ -19,3 +19,43 @@ services:
       POSTGRES_DB: "test"
       POSTGRES_USER: "test"
       POSTGRES_PASSWORD: "test"
+
+  userstock-ms:
+    build:
+      context: ./userstock-ms
+    depends_on:
+    - userstock-ms-mongodb
+    environment:
+      - MONGO_HOST=mongodb://userstock-ms-mongodb:27017/
+    ports:
+      - "5001:5000"
+  userstock-ms-mongodb:
+    image: mongo
+    volumes:
+    - ../mongo-volume:/data/db
+    ports:
+    - "27017:27017"
+
+  transaction-ms:
+    build:
+      context: ./transaction-ms
+    environment:
+      - GOOGLE_TOPIC_PATH=projects/dataarchitectures/topics/stock-transactions
+    ports:
+      - "5002:5000"
+
+  stock-ms-mongodb:
+    image: mongo
+    volumes:
+    - ../mongo-volume:/data/db
+    ports:
+    - "27017:27017"
+  stock-ms:
+    build:
+      context: ./stock-ms
+    depends_on:
+    - stock-ms-mongodb
+    environment:
+      - MONGO_HOST=mongodb://stock-ms-mongodb:27017/
+    ports:
+      - "5003:5000"
