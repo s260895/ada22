@@ -4,7 +4,6 @@ services:
     build:
       context: ./transaction-ms
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=credentials.json
       - GOOGLE_TOPIC_PATH=projects/dataarchitectures/topics/stock-transactions
     ports:
       - "5001:5000"
