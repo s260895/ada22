@@ -2,6 +2,7 @@ from datetime import datetime
 import pandas
 import ccxt
 
+
 def rule_evaluator(event,context):
     '''
         Stateless Function to fetch latest price data of all stocks
@@ -10,10 +11,33 @@ def rule_evaluator(event,context):
     '''
 
 
+
+   min_input_length =   np.max([float(strat_params['fast_ema']),float(strat_params['slow_ema'])])
+
+    if len(list(current_input['closes'].values))<min_input_length:
+        return "INPUT HAS TOO FEW ELEMENTS"
+    
+    closes = current_input['closes'].astype(float)
+    datetimes = current_input['datetime']
+    # closes = closes[:-1]
+    # closes['close'] = closes['close'].astype(float)
+
+    indicator = pd.DataFrame(ema(closes.tolist(),strat_params['fast_ema']) - ema(closes.tolist(),strat_params['slow_ema']),columns=['ema_diff'])
+    p = strat_params['slow_ema']+1
+    closes = closes[p:].reset_index(drop=True)
+    indicator = indicator[p:].reset_index(drop=True)
+    datetimes = datetimes[p:].reset_index(drop=True)
+    signal = [0] + [1 if float(indicator.loc[index]) > 0 and float(indicator.loc[index-1]) < 0 else -1 if float(indicator.loc[index]) < 0 and float(indicator.loc[index-1]) > 0  else 0 for index in indicator.index[1:]]
+
+
+
     '''
-        Stock List to be fetched from GET /stocks
+        Stock List and Corresponding Prices to be fetched from GET /stocks
     '''
     stock_list=['BTCUSDT','ETHUSDT','BNBUSDT']
+    df_dict = {'BTCUSDT':[],
+                'ETHUSDT':[],
+                'BNBUSDT':[]}
 
 
     '''Hard Coded Parameters: 
@@ -32,6 +56,7 @@ def rule_evaluator(event,context):
                         'hedgeMode':True
                         })
     last_incomplete_candle = False
+    
 
 
     '''
