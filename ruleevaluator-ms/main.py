@@ -11,7 +11,6 @@ def rule_evaluator(event,context):
     '''
 
 
-
    min_input_length =   np.max([float(strat_params['fast_ema']),float(strat_params['slow_ema'])])
 
     if len(list(current_input['closes'].values))<min_input_length:
