@@ -46,29 +46,21 @@ def get_stocks():
 
 
 @app.route("/stocks/<stock_id>", methods=["PUT"])
-def update_stock():
+def update_stock(stock_id):
     request_data = request.get_json()
     # return status 400 is necessary data is not available
-    if "stock_id" not in request_data:
-        return "No stock_id", 400
-    if "name" not in request_data:
-        return "No name", 400
     if "price" not in request_data:
         return "No price", 400
-    if "ticker" not in request_data:
-        return "No ticker", 400
     # try to find the object, return status 400 is object_id is not correct
     try:
-        object = db.stocks.find_one({"_id": ObjectId(request_data["stock_id"])})
+        object = db.stocks.find_one({"_id": ObjectId(stock_id)})
     except:
         return "Incorrect stock_id", 400
 
     # update object
-    db.stocks.update_one({"_id": ObjectId(request_data["stock_id"])}, {
+    db.stocks.update_one({"_id": ObjectId(stock_id)}, {
         "$set": {
-            "name": request_data["name"],
-            "price": request_data["price"],
-            "ticker": request_data["ticker"]
+            "price": request_data["price"]
         }
     })
     return "Stock updated!", 202
