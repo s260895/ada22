@@ -53,7 +53,7 @@ async def get_user_broker(user_id: int):
     except DoesNotExist:
         raise not_found
 
-    return await UserOut_Pydantic.from_queryset_single(user_broker)
+    return await UserBrokerOut_Pydantic.from_queryset_single(user_broker)
 
 
 @user_router.put("/users/{user_id}/broker", response_model=UserBrokerOut_Pydantic, responses={404: {"model": HTTPNotFoundError}}, description="Update the broker of a user.")
