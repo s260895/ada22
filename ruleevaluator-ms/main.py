@@ -1,42 +1,24 @@
 from datetime import datetime
 import pandas
 import ccxt
-
+import pyti
+import pickle
 
 def rule_evaluator(event,context):
     '''
-        Stateless Function to fetch latest price data of all stocks
+        Stateless Function to Evaluate Trading Logic on the latest price data
         Event/Trigger: Cloud Scheduler
 
     '''
-
-
-   min_input_length =   np.max([float(strat_params['fast_ema']),float(strat_params['slow_ema'])])
-
-    if len(list(current_input['closes'].values))<min_input_length:
-        return "INPUT HAS TOO FEW ELEMENTS"
-    
-    closes = current_input['closes'].astype(float)
-    datetimes = current_input['datetime']
-    # closes = closes[:-1]
-    # closes['close'] = closes['close'].astype(float)
-
-    indicator = pd.DataFrame(ema(closes.tolist(),strat_params['fast_ema']) - ema(closes.tolist(),strat_params['slow_ema']),columns=['ema_diff'])
-    p = strat_params['slow_ema']+1
-    closes = closes[p:].reset_index(drop=True)
-    indicator = indicator[p:].reset_index(drop=True)
-    datetimes = datetimes[p:].reset_index(drop=True)
-    signal = [0] + [1 if float(indicator.loc[index]) > 0 and float(indicator.loc[index-1]) < 0 else -1 if float(indicator.loc[index]) < 0 and float(indicator.loc[index-1]) > 0  else 0 for index in indicator.index[1:]]
-
 
 
     '''
         Stock List and Corresponding Prices to be fetched from GET /stocks
     '''
     stock_list=['BTCUSDT','ETHUSDT','BNBUSDT']
-    df_dict = {'BTCUSDT':[],
-                'ETHUSDT':[],
-                'BNBUSDT':[]}
+    
+    with open('sample_output.pkl', 'rb') as f:
+        stock_prices = pickle.load(f)
 
 
     '''Hard Coded Parameters: 
@@ -44,6 +26,8 @@ def rule_evaluator(event,context):
             Interval, 
             User ID/Pwd, 
             Whether to Fetch the Last Price 
+            Strategy Name/Description
+            Technical Indicators Used
     '''
     candles = 50
     interval = '1h'
@@ -55,25 +39,61 @@ def rule_evaluator(event,context):
                         'hedgeMode':True
                         })
     last_incomplete_candle = False
-    
+    strategy_params = {
+        'strat_name':'ema_cross_over_under'
+        'technical_indicators': {'fast_ema':4,'slow_ema':20},
 
 
-    '''
-        For Each Stock: Store the fetched Price Values and Datetimes as a Pandas Dataframe 
-    '''
-    df_dict = dict()
-    for symbol in stock_list:    
-        if last_incomplete_candle == False:
-            closes = [[datetime.datetime.utcfromtimestamp(float(elem[0]) / 1000.),elem[4]] 
-            for elem in exchange.fapiPublic_get_klines({'symbol':symbol,'interval':interval})][-candles:-1]
-        if last_incomplete_candle == True:
-            closes = [[datetime.datetime.utcfromtimestamp(float(elem[0]) / 1000.),elem[4]] 
-            for elem in exchange.fapiPublic_get_klines({'symbol':symbol,'interval':interval})][-(candles-1):]
-        dates = [elem[0] for elem in closes]
-        values = [float(elem[1]) for elem in closes]
-        df = pandas.DataFrame([(elem[0],elem[1]) for elem in zip(dates,values)],columns=['datetime','closes'])
-        df_dict[symbol]=df
+
+    }
+
+    min_input_length =   np.max([float(strategy_params['technical_inidcators']['fast_ema']),float(strategy_params['technical_inidcators']['slow_ema'])])
+
     
+    for stock in stock_list:   
+
+        if len(list(stock_prices[stock]['closes'].values))<min_input_length:
+            return "INPUT HAS TOO FEW ELEMENTS"
+
+        closes = stock_prices[stock]['closes'].astype(float)
+        datetimes = stock_prices[stock]['datetime']
+        # closes = closes[:-1]
+        # closes['close'] = closes['close'].astype(float)
+
+        '''Calculate "Aggregate" Indicator from all Technical Indicators'''
+        indicator = pandas.DataFrame(pyti.ema(closes.tolist(),strategy_params['technical_indicators']['fast_ema'])
+                                - pyti.ema(closes.tolist(),strategy_params['slow_ema']),
+                                columns=['ema_diff'])
+        '''Reduce Length of All Columns'''
+        closes = closes[(min_input_length+1):].reset_index(drop=True)
+        indicator = indicator[(min_input_length+1):].reset_index(drop=True)
+        datetimes = datetimes[(min_input_length+1):].reset_index(drop=True)
+        '''Compute Signal Column (permissible values 1,-1,0)'''
+        signal = [0] + [1 if float(indicator.loc[index]) > 0 and float(indicator.loc[index-1]) < 0
+                        else -1 if float(indicator.loc[index]) < 0 and float(indicator.loc[index-1]) > 0  
+                        else 0 for index in indicator.index[1:]]
+
+        '''Check for signal'''
+        if signal[-1] is not 0:
+            '''If Positive Signal'''
+            if signal[-1] == 1:
+                
+
+
+            '''Go Short / SELL Stock'''
+            if signal[-1] == -1:
+
+                
+
+
+
+
+
+
+''''''
+GET /user_stocks (argument: stock id).
+
+
 
     '''
     update through PUT /stocks/<stock_id>
