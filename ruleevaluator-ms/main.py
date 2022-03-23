@@ -2,7 +2,7 @@ from datetime import datetime
 import pandas
 import ccxt
 
-def price_fetcher(event,context):
+def rule_evaluator(event,context):
     '''
         Stateless Function to fetch latest price data of all stocks
         Event/Trigger: Cloud Scheduler
