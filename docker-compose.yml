@@ -8,7 +8,7 @@ services:
     - "27017:27017"
   stock-ms:
     build:
-      context: ./stock-ms
+      context: ./stocks
     depends_on:
     - mongodb-ms
     environment:
