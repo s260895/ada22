@@ -19,7 +19,7 @@ UserBrokerIn_Pydantic = pydantic_model_creator(
     )
 )
 UserBrokerOut_Pydantic = pydantic_model_creator(
-    models.User, name="UserBrokerOut", include=(
+    models.UserBroker, name="UserBrokerOut", include=(
         "id", "user_id", "url", "client_key", "client_secret",
     )
 )
