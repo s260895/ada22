@@ -62,7 +62,7 @@ def get_all_user_stocks(user_id):
 
 
 @app.route("/get-users/<stock_id>", methods=["GET"])
-def get_all_user_stocks(stock_id):
+def get_users(stock_id):
     '''
     Endpoint to retrieve all users that have a certain stock
     '''
