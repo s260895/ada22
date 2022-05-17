@@ -75,7 +75,7 @@ def update_user_stock(user_id):
             "date_closed": {"$ne": None}
         })
     except:
-        return "Not correct user_stock_id", 400
+        return "No user_stock found", 400
 
     # update object
     db.userstocks.update_one({"user_id": ObjectId(user_id)}, {
