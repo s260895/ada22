@@ -2,7 +2,7 @@ from flask import jsonify
 
 
 def rule_evaluator(request):
-    """Fetch the latest price for every stock.
+    """Evaluates the rules for a set of stocks.
     Args:
         request (flask.Request): HTTP request object.
     Returns:

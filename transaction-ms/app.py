@@ -5,9 +5,7 @@ app = Flask(__name__)
 
 @app.route('/create-transaction', methods=['POST'])
 def endpoint_create_transaction():
-    '''
-    Endpoint for forwarding the transaction to the broker
-    '''
+    """Endpoint for forwarding the transaction to the broker"""
     # get the request body
     request_data = request.get_json()
     # only forward transaction if request body is correct
