@@ -60,8 +60,8 @@ def get_users(stock_id):
     return jsonify(return_list), 200
 
 
-@app.route("/<user_stock_id>", methods=["PUT"])
-def update_user_stock(user_stock_id):
+@app.route("/user_stocks/<user_id>", methods=["PUT"])
+def update_user_stock(user_id):
     request_data = request.get_json()
     # return status 400 is necessary data is not available
     if "close_price" not in request_data:
@@ -70,14 +70,15 @@ def update_user_stock(user_stock_id):
         return "No date_closed", 400
     # try to find the object, return status 400 is object_id is not correct
     try:
-        object = db.userstocks.find_one({"_id": ObjectId(user_stock_id)})
+        user_stock = db.userstocks.find_one({
+            "user_id": ObjectId(user_id),
+            "date_closed": {"$ne": None}
+        })
     except:
         return "Not correct user_stock_id", 400
-    # return status 400 is object is already sold
-    if object["date_closed"] != None:
-        return "UserStock already sold", 400
+
     # update object
-    db.userstocks.update_one({"_id": ObjectId(user_stock_id)}, {
+    db.userstocks.update_one({"user_id": ObjectId(user_id)}, {
         "$set": {
             "date_closed": request_data["date_closed"],
             "close_price": request_data["close_price"]
