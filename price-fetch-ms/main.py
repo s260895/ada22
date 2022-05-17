@@ -1,7 +1,7 @@
 import ccxt
 from flask import jsonify
 from datetime import datetime
-
+import sys
 
 def price_fetcher(request):
     """Fetch the latest price for every stock.
@@ -12,14 +12,17 @@ def price_fetcher(request):
     """
     content_type = request.headers["content-type"]
     if content_type == "application/json; charset=UTF-8":
-        stock_list = request.get_json(silent=True)
-        if not stock_list:
+        stocks = request.get_json(silent=True)
+        if not stocks:
             raise ValueError("JSON is invalid.")
     else:
         raise ValueError(f"Invalid content type: {content_type}")
 
+    print(stocks, file=sys.stderr)
+
     # Parameters
-    candles, interval = 5, "5m"
+    candles = 5
+    interval = "5m"
     exchange = ccxt.binance({
         "apiKey": "INH9JYsd4Cu3kMPoONiCVHP3KlACsg3F4ehDN1cburoKohsARMpZGcq4PnQoqzyF",
         "secret": "FSVMXANswsGOj3B4Oi4NSDOlX5fsvWOJ3s56DQsWvJTjLhSuPyq1aFLbFEWoOrMt",
@@ -29,11 +32,17 @@ def price_fetcher(request):
     last_incomplete_candle = False
 
     # Store the fetched Price Values and Datetimes
-    for elem in stock_list:
+    for stock in stocks:
         if not last_incomplete_candle:
-            closes = [[datetime.utcfromtimestamp(float(elem[0]) / 1000.), elem[4]] for elem in exchange.fapiPublic_get_klines({"symbol": elem["ticker"], "interval": interval})][-candles:-1]
+            closes = [
+                [datetime.utcfromtimestamp(float(elem[0]) / 1000.), elem[4]]
+                for elem in exchange.fapiPublic_get_klines({"symbol": stock["ticker"], "interval": interval})
+            ][-candles:-1]
         if last_incomplete_candle:
-            closes = [[datetime.utcfromtimestamp(float(elem[0]) / 1000.), elem[4]] for elem in exchange.fapiPublic_get_klines({"symbol": elem["ticker"], "interval": interval})][-(candles-1):]
-        elem["prices"] = [float(elem[1]) for elem in closes]
+            closes = [
+                [datetime.utcfromtimestamp(float(elem[0]) / 1000.), elem[4]]
+                for elem in exchange.fapiPublic_get_klines({"symbol": stock["ticker"], "interval": interval})
+            ][-(candles - 1):]
+        stock["prices"] = [float(elem[1]) for elem in closes]
 
-    return jsonify(stock_list)
+    return jsonify(stocks)

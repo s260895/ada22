@@ -14,7 +14,7 @@ def create_stock():
     if not data:
         return "Request body is empty", 400
     # define the necessary data
-    required_attrs = ["stock_id", "name", "prices", "ticker"]
+    required_attrs = ["name", "prices", "ticker"]
     # check for necessary data, return status 400 is data is not available
     for required_attr in required_attrs:
         if required_attr not in data:
