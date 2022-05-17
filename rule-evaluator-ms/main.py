@@ -6,7 +6,7 @@ def rule_evaluator(request):
         The response text or any set of values that can be turned into a Response object using `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
     """
     content_type = request.headers["content-type"]
-    if content_type == "application/json; charset=UTF-8":
+    if "application/json" in content_type:
         stocks = request.get_json(silent=True)
         if not stocks:
             raise ValueError("JSON is invalid.")
