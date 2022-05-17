@@ -27,6 +27,6 @@ def rule_evaluator(request):
         lower_bound = (sum(closes[:3]) / len(closes[:3])) * 0.975
         upper_bound = (sum(closes[:3]) / len(closes[:3])) * 1.025
         signal = -1 if closes[-1] <= lower_bound else 0 if closes[-1] < upper_bound else 1
-        signals.append({"stock": stock["_id"], "signal": signal})
+        signals.append({"stock_id": stock["_id"], "signal": signal})
 
     return signals
