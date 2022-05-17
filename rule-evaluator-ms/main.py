@@ -27,8 +27,8 @@ def rule_evaluator(request):
         closes = [float(price) for price in stock["prices"]]
 
         # Compute signal (permissible values 1,-1,0)
-        lower_bound = (sum(closes[:3]) / len(closes[:3])) * 0.975
-        upper_bound = (sum(closes[:3]) / len(closes[:3])) * 1.025
+        lower_bound = (sum(closes[:3]) / len(closes[:3])) * 0.99995
+        upper_bound = (sum(closes[:3]) / len(closes[:3])) * 1.00005
         signal = -1 if closes[-1] <= lower_bound else 0 if closes[-1] < upper_bound else 1
         signals.append({"stock_id": stock["_id"], "signal": signal})
 
