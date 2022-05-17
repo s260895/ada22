@@ -1,7 +1,7 @@
 import ccxt
 from flask import jsonify
 from datetime import datetime
-import sys
+
 
 def price_fetcher(request):
     """Fetch the latest price for every stock.

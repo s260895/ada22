@@ -1,161 +1,32 @@
-# from asyncio.windows_events import NULL
-from datetime import datetime
-import pandas
-import ccxt
-from pyti.exponential_moving_average import exponential_moving_average
-import pickle
-import time
-from datetime import datetime
+def rule_evaluator(request):
+    """Fetch the latest price for every stock.
+    Args:
+        request (flask.Request): HTTP request object.
+    Returns:
+        The response text or any set of values that can be turned into a Response object using `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
+    """
+    content_type = request.headers["content-type"]
+    if content_type == "application/json; charset=UTF-8":
+        stocks = request.get_json(silent=True)
+        if not stocks:
+            raise ValueError("JSON is invalid.")
+    else:
+        raise ValueError(f"Invalid content type: {content_type}")
 
-
-def rule_evaluator(event, context):
-    '''
-        Stateless Function to Evaluate Trading Logic on the latest price data
-        Event/Trigger: Cloud Scheduler
-
-    '''
-
-    '''
-        Stock List and Corresponding Prices to be fetched from GET /stocks
-    '''
-
-    stocks = [{
-        "id": 1,
-        "name": "Bitcoin",
-        "ticker": "BTCUSDT",
-        "prices": [1, 10, 100, 10]
-    },
-        {
-            "id": 2,
-            "name": "Ethereum",
-            "ticker": "ETHUSDT",
-            "prices": [1000, 100, 10, 1]
-        },
-        {
-            "id": 3,
-            "name": "Binance",
-            "ticker": "BNBUSDT",
-            "prices": [1, 10, 1, 10]
-        }
-    ]
-
-    user_stocks = [
-        {
-            "id": 1,
-            "stock_id": 1,
-            "user_id": 1,
-            "date_opened": 1648058100,
-            "date_closed": 1648058104,
-            "open_price": "1526.32",
-            "close_price": "1621.25"
-        },
-        {
-            "id": 2,
-            "stock_id": 1,
-            "user_id": 1,
-            "date_opened": 1648058102,
-            "date_closed": None,
-            "open_price": "1500.32",
-            "close_price": None
-        },
-        {
-            "id": 3,
-            "stock_id": 1,
-            "user_id": 1,
-            "date_opened": 1648058104,
-            "date_closed": None,
-            "open_price": "1200",
-            "close_price": None
-        }
-    ]
+    signals = list()
 
     for stock in stocks:
-        if len(list(stock['prices'])) != 4:
+        # Check if there are enough prices to compute signal
+        if len(list(stock["prices"])) != 4:
             return f"Signal cannot be computed from {len(list(stock['prices']))} prices."
 
+        # Convert stock prices to floats
         closes = [float(price) for price in stock["prices"]]
 
-        # Compute Signal Column (permissible values 1,-1,0)
-        signal = [1 if float(closes[index]) > float(closes[index - 1])
-                  else -1 if float(closes[index]) < float(closes[index - 1])
-        else 0
-                  for index in range(len(closes))]
+        # Compute signal (permissible values 1,-1,0)
+        lower_bound = (sum(closes[:3]) / len(closes[:3])) * 0.975
+        upper_bound = (sum(closes[:3]) / len(closes[:3])) * 1.025
+        signal = -1 if closes[-1] <= lower_bound else 0 if closes[-1] < upper_bound else 1
+        signals.append({"stock": stock["_id"], "signal": signal})
 
-        # The latest signal is non-zero, i.e., a transaction must be created
-        if signal[-1] != 0:
-            # The latest signal is positive, i.e.,m
-            if signal[-1] == 1:
-                user_ids = set(
-                    [user_stock["user_id"] for user_stock in user_stocks if user_stock["stock_id"] == stock["id"]])
-                for user_id in user_ids:
-                    # 1. BUY transaction to be forwarded to the transaction-ms
-                    new_transaction = {
-                        "symbol": stock["ticker"],
-                        "type": "MARKET",
-                        "side": "BUY",
-                        "positionSide": "BOTH",
-                        "quantity": 1.0,
-                        "user_id": user_id
-                    }
-                    # POST /transactions, body = new_transaction
-
-                    # 2. Create a new UserStock in userstock-ms
-                    new_user_stock = {
-                        "stock_id": 1,
-                        "user_id": user_id,
-                        "date_opened": datetime.now(),
-                        "date_closed": None,
-                        "open_price": stock_db['prices'],
-                        "close_price": None
-                    }
-
-                    user_stocks_db.append(new_user_stock)
-                    # POST /user_stocks, body = new_user_stock
-
-            if signal[-1] == -1:
-
-                selected_user_stocks = [user_stock_db for user_stock_db in user_stocks_db if
-                                        (user_stock_db['stock_id'] == stock_db['id']) and (
-                                                    user_stock_db['date_closed'] == None)]
-                user_ids = [selected_user_stock['user_id'] for selected_user_stock in selected_user_stocks]
-
-                # print(user_stocks_db)
-                # print(user_ids)
-                for user_id in user_ids:
-                    # print(user_stocks_db)
-                    print("123")
-                    # 1. SELL transaction to be forwarded to the transaction-ms
-                    new_transaction = {
-                        "symbol": stock_db['ticker'],
-                        "type": "MARKET",
-                        "side": "SELL",
-                        "positionSide": "BOTH",
-                        "quantity": 1.0,
-                        "user_id": user_id
-                    }
-                    # POST /transactions, body = new_transaction
-
-                    # 2. Close an UserStock in userstock-ms
-                    selected_user_stock = [selected_user_stock for selected_user_stock in selected_user_stocks if
-                                           selected_user_stock['user_id'] == user_id][0]
-                    print(selected_user_stock)
-                    # print(selected_)
-                    selected_index = user_stocks_db.index(selected_user_stock)
-
-                    selected_user_stock['date_closed'] = datetime.now()
-                    selected_user_stock['close_price'] = stock_db['prices'][-1]
-
-                    user_stocks_db[selected_index] = selected_user_stock
-
-                    print(user_stocks_db)
-
-                    # new_user_stock = {
-                    #     "stock_id": 1,
-                    #     "user_id": user_id,
-                    #     "date_opened": datetime.now(),
-                    #     "date_closed": None,
-                    #     "open_price": stock_db['price'],
-                    #     "close_price": stock_db['price']
-                    # }
-
-    return user_stocks_db
+    return signals
