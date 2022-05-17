@@ -61,6 +61,21 @@ def get_all_user_stocks(user_id):
     return jsonify(return_list), 200
 
 
+@app.route("/get-users/<stock_id>", methods=["GET"])
+def get_all_user_stocks(stock_id):
+    '''
+    Endpoint to retrieve all users that have a certain stock
+    '''
+    # get all user_stocks
+    objects = db.userstocks.find({"stock_id": stock_id})
+    # return dict with all userstocks in a strange way
+    return_list = []
+    # append all user_ids to return_list
+    for object in objects:
+        return_list.append(object["user_id"])
+    return jsonify(return_list), 200
+
+
 @app.route("/sell", methods=["PUT"])
 def update_user_stock():
     request_data = request.get_json()
