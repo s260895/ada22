@@ -12,7 +12,7 @@ def endpoint_create_transaction():
     request_data = request.get_json()
     # only forward transaction if request body is correct
     if "transaction_type" in request_data and "stock_id" in request_data and "user_id" in request_data \
-        and (request_data["transaction_type"] == "buy" or request_data["type"] == "sell"):
+        and (request_data["transaction_type"] == "buy" or request_data["transaction_type"] == "sell"):
         transaction = create_transaction(request_data["transaction_type"], request_data["stock_id"], request_data["user_id"])
         return transaction, 201
     # if request body is not correct, return status code 400
