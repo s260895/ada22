@@ -29,24 +29,8 @@ def create_user_stock():
     return data_object, 201
 
 
-@app.route("/user_stocks/<user_id>", methods=["GET"])
-def get_user_stocks(user_id):
-    '''
-    Endpoint to retrieve user_stocks for a certain user
-    '''
-    # get all user_stocks
-    objects = db.userstocks.find({"user_id": int(user_id)})
-    # return dict with all userstocks in a strange way
-    return_list = []
-    # convert the ObjectId and append to return_list
-    for object in objects:
-        object["_id"] = str(object["_id"])
-        return_list.append(object)
-    return jsonify(return_list), 200
-
-
 @app.route("/user_stocks/all", methods=["GET"])
-def get_all_user_stocks(user_id):
+def get_all_user_stocks():
     '''
     Endpoint to retrieve all user stocks
     '''
@@ -76,26 +60,26 @@ def get_users(stock_id):
     return jsonify(return_list), 200
 
 
-@app.route("/sell", methods=["PUT"])
-def update_user_stock():
+@app.route("/<user_stock_id>", methods=["PUT"])
+def update_user_stock(user_stock_id):
     request_data = request.get_json()
     # return status 400 is necessary data is not available
-    if "stock_id" not in request_data:
-        return "No stock_id", 400
     if "close_price" not in request_data:
         return "No close_price", 400
+    if "date_closed" not in request_data:
+        return "No date_closed", 400
     # try to find the object, return status 400 is object_id is not correct
     try:
-        object = db.userstocks.find_one({"_id": ObjectId(request_data["stock_id"])})
+        object = db.userstocks.find_one({"_id": ObjectId(user_stock_id)})
     except:
         return "Not correct user_stock_id", 400
     # return status 400 is object is already sold
     if object["date_closed"] != None:
         return "UserStock already sold", 400
     # update object
-    db.userstocks.update_one({"_id": ObjectId(request_data["stock_id"])}, {
+    db.userstocks.update_one({"_id": ObjectId(user_stock_id)}, {
         "$set": {
-            "date_closed": datetime.now(),
+            "date_closed": request_data["date_closed"],
             "close_price": request_data["close_price"]
         }
     })
