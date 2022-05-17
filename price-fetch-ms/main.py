@@ -18,8 +18,6 @@ def price_fetcher(request):
     else:
         raise ValueError(f"Invalid content type: {content_type}")
 
-    print(stocks, file=sys.stderr)
-
     # Parameters
     candles = 5
     interval = "5m"

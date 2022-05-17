@@ -1,4 +1,4 @@
-from asyncio.windows_events import NULL
+# from asyncio.windows_events import NULL
 from datetime import datetime
 import pandas
 import ccxt
@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 
 
-def rule_evaluator(event,context):
+def rule_evaluator(event, context):
     '''
         Stateless Function to Evaluate Trading Logic on the latest price data
         Event/Trigger: Cloud Scheduler
@@ -18,33 +18,28 @@ def rule_evaluator(event,context):
     '''
         Stock List and Corresponding Prices to be fetched from GET /stocks
     '''
-    # stock_list=['BTCUSDT','ETHUSDT','BNBUSDT']
-    
-    # with open('sample_output.pkl', 'rb') as f:
-    #     stock_prices = pickle.load(f)
 
-
-    stocks_db = [{
+    stocks = [{
         "id": 1,
         "name": "Bitcoin",
         "ticker": "BTCUSDT",
-        "prices": [1,10,100,10]
+        "prices": [1, 10, 100, 10]
+    },
+        {
+            "id": 2,
+            "name": "Ethereum",
+            "ticker": "ETHUSDT",
+            "prices": [1000, 100, 10, 1]
         },
         {
-        "id": 2,
-        "name": "Ethereum",
-        "ticker": "ETHUSDT",
-        "prices": [1000,100,10,1]
-        },
-        {
-        "id": 3,
-        "name": "Binance",
-        "ticker": "BNBUSDT",
-        "prices": [1,10,1,10]
+            "id": 3,
+            "name": "Binance",
+            "ticker": "BNBUSDT",
+            "prices": [1, 10, 1, 10]
         }
     ]
 
-    user_stocks_db = [
+    user_stocks = [
         {
             "id": 1,
             "stock_id": 1,
@@ -74,68 +69,28 @@ def rule_evaluator(event,context):
         }
     ]
 
-    '''Hard Coded Parameters: 
-            Number of Candles, 
-            Interval, 
-            User ID/Pwd, 
-            Whether to Fetch the Last Price 
-            Strategy Name/Description
-            Technical Indicators Used
-    '''
+    for stock in stocks:
+        if len(list(stock['prices'])) != 4:
+            return f"Signal cannot be computed from {len(list(stock['prices']))} prices."
 
-    strategy_params = {
-        'strat_name':'ema_cross_over_under',
-        'technical_indicators': {'fast_ema':2,'slow_ema':3}
-    }
+        closes = [float(price) for price in stock["prices"]]
 
-    prices_per_stock = 4
+        # Compute Signal Column (permissible values 1,-1,0)
+        signal = [1 if float(closes[index]) > float(closes[index - 1])
+                  else -1 if float(closes[index]) < float(closes[index - 1])
+        else 0
+                  for index in range(len(closes))]
 
-    '''
-        for each stock
-    '''
-    for stock_db in stocks_db:
-
-        if len(list(stock_db['prices'])) != prices_per_stock:
-            return "INPUT STOCK HAS TOO FEW PRICES"
-
-        closes = [float(price) for price in stock_db['prices']]
-
-        '''Calculate "Aggregate" Indicator from all Technical Indicators'''
-        indicator = pandas.DataFrame(exponential_moving_average(closes,strategy_params['technical_indicators']['fast_ema'])
-                                - exponential_moving_average(closes,strategy_params['technical_indicators']['slow_ema']),
-                                columns=['ema_diff'])
-        '''Reduce Length of All Columns'''
-        # closes = closes[(prices_per_stock+1):]
-        # indicator = indicator[(prices_per_stock+1):]
-        '''Compute Signal Column (permissible values 1,-1,0)'''
-        signal = [1 if  float(closes[index])>float(closes[index-1])
-                    else -1 if float(closes[index])<float(closes[index-1])
-                    else 0
-                    for index in range(len(closes))]
-
-        # [0] + [1 if float(indicator.loc[index]) > 0 and float(indicator.loc[index-1]) < 0
-        #                 else -1 if float(indicator.loc[index]) < 0 and float(indicator.loc[index-1]) > 0  
-        #                 else 0 for index in indicator.index[1:]]
-
-        # print(signal)
-        print(stock_db['ticker'])
-        '''
-            if signal not 0, fetch all users 
-            GET /user_stocks (argument: stock id)
-        '''
+        # The latest signal is non-zero, i.e., a transaction must be created
         if signal[-1] != 0:
-            '''
-                If Non Zero Signal
-                Make Transaction with 
-                POST /transactions (args: user_id, stock_id)
-            '''
-
+            # The latest signal is positive, i.e.,m
             if signal[-1] == 1:
-                user_ids = set([user_stock_db['user_id'] for user_stock_db in user_stocks_db if user_stock_db['stock_id'] == stock_db['id']])
+                user_ids = set(
+                    [user_stock["user_id"] for user_stock in user_stocks if user_stock["stock_id"] == stock["id"]])
                 for user_id in user_ids:
                     # 1. BUY transaction to be forwarded to the transaction-ms
                     new_transaction = {
-                        "symbol": stock_db['ticker'],
+                        "symbol": stock["ticker"],
                         "type": "MARKET",
                         "side": "BUY",
                         "positionSide": "BOTH",
@@ -158,11 +113,12 @@ def rule_evaluator(event,context):
                     # POST /user_stocks, body = new_user_stock
 
             if signal[-1] == -1:
-                
-                selected_user_stocks = [user_stock_db for user_stock_db in user_stocks_db if (user_stock_db['stock_id'] == stock_db['id']) and (user_stock_db['date_closed'] == None)]
+
+                selected_user_stocks = [user_stock_db for user_stock_db in user_stocks_db if
+                                        (user_stock_db['stock_id'] == stock_db['id']) and (
+                                                    user_stock_db['date_closed'] == None)]
                 user_ids = [selected_user_stock['user_id'] for selected_user_stock in selected_user_stocks]
-                
-                
+
                 # print(user_stocks_db)
                 # print(user_ids)
                 for user_id in user_ids:
@@ -180,20 +136,18 @@ def rule_evaluator(event,context):
                     # POST /transactions, body = new_transaction
 
                     # 2. Close an UserStock in userstock-ms
-                    selected_user_stock = [selected_user_stock for selected_user_stock in selected_user_stocks if selected_user_stock['user_id'] == user_id][0]
+                    selected_user_stock = [selected_user_stock for selected_user_stock in selected_user_stocks if
+                                           selected_user_stock['user_id'] == user_id][0]
                     print(selected_user_stock)
                     # print(selected_)
                     selected_index = user_stocks_db.index(selected_user_stock)
-                    
+
                     selected_user_stock['date_closed'] = datetime.now()
                     selected_user_stock['close_price'] = stock_db['prices'][-1]
-
-
 
                     user_stocks_db[selected_index] = selected_user_stock
 
                     print(user_stocks_db)
-
 
                     # new_user_stock = {
                     #     "stock_id": 1,
