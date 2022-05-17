@@ -1,58 +1,39 @@
-from datetime import datetime
-import pandas
 import ccxt
-
-def price_fetcher(event,context):
-    '''
-        Stateless Function to fetch latest price data of all stocks
-        Event/Trigger: Cloud Scheduler
-
-    '''
+from flask import jsonify
+from datetime import datetime
 
 
-    '''
-        Stock List to be fetched from GET /stocks
-    '''
-    stock_list= ['BTCUSDT','ETHUSDT','BNBUSDT']
+def price_fetcher(request):
+    """Fetch the latest price for every stock.
+    Args:
+        request (flask.Request): HTTP request object.
+    Returns:
+        The response text or any set of values that can be turned into a Response object using `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
+    """
+    content_type = request.headers["content-type"]
+    if content_type == "application/json":
+        stock_list = request.get_json(silent=True)
+        if not stock_list:
+            raise ValueError("JSON is invalid.")
+    else:
+        raise ValueError(f"Invalid content type: {content_type}")
 
-
-    '''Hard Coded Parameters: 
-            Number of Candles, 
-            Interval, 
-            User ID/Pwd, 
-            Whether to Fetch the Last Price 
-    '''
-    candles = 50
-    interval = '1h'
-    exchange= ccxt.binance({
-                        'apiKey': 'INH9JYsd4Cu3kMPoONiCVHP3KlACsg3F4ehDN1cburoKohsARMpZGcq4PnQoqzyF',
-                        'secret': 'FSVMXANswsGOj3B4Oi4NSDOlX5fsvWOJ3s56DQsWvJTjLhSuPyq1aFLbFEWoOrMt',
-                        'enableRateLimit': True, 
-                        'options': {'defaultType': 'future'},
-                        'hedgeMode':True
-                        })
+    # Parameters
+    candles, interval = 5, "5m"
+    exchange = ccxt.binance({
+        "apiKey": "INH9JYsd4Cu3kMPoONiCVHP3KlACsg3F4ehDN1cburoKohsARMpZGcq4PnQoqzyF",
+        "secret": "FSVMXANswsGOj3B4Oi4NSDOlX5fsvWOJ3s56DQsWvJTjLhSuPyq1aFLbFEWoOrMt",
+        "enableRateLimit": True,
+        "options": {"defaultType": "future"},
+        "hedgeMode": True})
     last_incomplete_candle = False
 
+    # Store the fetched Price Values and Datetimes
+    for elem in stock_list:
+        if not last_incomplete_candle:
+            closes = [[datetime.utcfromtimestamp(float(elem[0]) / 1000.), elem[4]] for elem in exchange.fapiPublic_get_klines({"symbol": elem["ticker"], "interval": interval})][-candles:-1]
+        if last_incomplete_candle:
+            closes = [[datetime.utcfromtimestamp(float(elem[0]) / 1000.), elem[4]] for elem in exchange.fapiPublic_get_klines({"symbol": elem["ticker"], "interval": interval})][-(candles-1):]
+        elem["prices"] = [float(elem[1]) for elem in closes]
 
-    '''
-        For Each Stock: Store the fetched Price Values and Datetimes as a Pandas Dataframe 
-    '''
-    df_dict = dict()
-    for symbol in stock_list:    
-        if last_incomplete_candle == False:
-            closes = [[datetime.datetime.utcfromtimestamp(float(elem[0]) / 1000.),elem[4]] 
-            for elem in exchange.fapiPublic_get_klines({'symbol':symbol,'interval':interval})][-candles:-1]
-        if last_incomplete_candle == True:
-            closes = [[datetime.datetime.utcfromtimestamp(float(elem[0]) / 1000.),elem[4]] 
-            for elem in exchange.fapiPublic_get_klines({'symbol':symbol,'interval':interval})][-(candles-1):]
-        dates = [elem[0] for elem in closes]
-        values = [float(elem[1]) for elem in closes]
-        df = pandas.DataFrame([(elem[0],elem[1]) for elem in zip(dates,values)],columns=['datetime','closes'])
-        df_dict[symbol]=df
-    
-
-    '''
-    update through PUT /stocks/<stock_id>
-    '''
-    return df_dict
-    
+    return jsonify(stock_list)
