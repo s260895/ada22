@@ -1,3 +1,6 @@
+from flask import jsonify
+
+
 def rule_evaluator(request):
     """Fetch the latest price for every stock.
     Args:
@@ -29,4 +32,4 @@ def rule_evaluator(request):
         signal = -1 if closes[-1] <= lower_bound else 0 if closes[-1] < upper_bound else 1
         signals.append({"stock_id": stock["_id"], "signal": signal})
 
-    return signals
+    return jsonify(signals)
