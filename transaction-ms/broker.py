@@ -1,7 +1,8 @@
 import os
 import json
 from google.cloud import pubsub_v1
-from random import randint
+from random import random
+from datetime import datetime
 
 # initialize google pub/sub
 publisher = pubsub_v1.PublisherClient()
@@ -14,7 +15,8 @@ def create_transaction(transaction_type, stock_id, user_id):
         "transaction_type": transaction_type,
         "stock_id": stock_id,
         "user_id": user_id,
-        "price": randint(0, 10),
+        "price": random() * 50000,
+        "datetime": datetime.now()
     }
 
     data = json.dumps(data).encode("utf-8")
