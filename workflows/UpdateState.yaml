@@ -1,0 +1,45 @@
+main:
+    params: [event]
+    steps:
+    - initVariables:
+        assign:
+            - UserStocksURL: ${"http://35.238.145.147:5001/user_stocks"}
+    - parseMessage:
+        assign:
+           - base64: ${base64.decode(event.data.message.data)}
+           - message: ${json.decode(base64)}
+    - conditionalOnType:
+        switch:
+            - condition: ${message.transaction_type == "buy"}
+              steps: 
+                - initBuyTransaction:
+                    assign:
+                        - NewUserStock:
+                            stock_id: ${message.stock_id}
+                            user_id: ${message.user_id}
+                            open_price: ${message.price}
+                            close_price: 
+                            date_opened: ${message.datetime}
+                            date_closed:
+                - CreateUserStock:
+                    call: http.post
+                    args:
+                        url: ${UserStocksURL}
+                        body: ${NewUserStock}
+                    result: GetUserStockResult
+            - condition: ${message.transaction_type == "sell"}
+              steps:
+                - initSellTransaction:
+                    assign:
+                        - UpdatedUserStock:
+                            close_price: ${message.price}
+                            date_closed: ${message.datetime}
+                - UpdateUserStock:
+                    call: http.put
+                    args:
+                        url: ${UserStocksURL + "/" + string(message.user_id)}
+                        body: ${UpdatedUserStock}
+                    result: GetUserStockResult
+        next: returnOutput
+    - returnOutput:
+        return: ${GetUserStockResult.body}

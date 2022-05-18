@@ -1,0 +1,39 @@
+main:
+    params: [input]
+    steps:
+    - getStocks:
+        call: http.get
+        args:
+            url: http://35.238.145.147:5003/stocks
+        result: GetStocksRes
+        next: fetchPrice
+    - fetchPrice:
+        call: http.post
+        args:
+            url: https://us-central1-driven-plexus-325011.cloudfunctions.net/price-fetch-ms
+            body: ${GetStocksRes.body}
+            auth:
+              type: OIDC
+        result: FetchPriceRes
+        next: UpdateStocksLoop
+    - UpdateStocksLoop:
+        for:
+            value: stockObject
+            in: ${FetchPriceRes.body}
+            steps:
+            - UpdateStock:
+                call: http.put
+                args:
+                    url: ${"http://35.238.145.147:5003/stocks/" + stockObject._id}
+                    body: ${stockObject}
+        next: PublishDomainEvent
+    - PublishDomainEvent:
+        call: googleapis.pubsub.v1.projects.topics.publish
+        args:
+            topic: ${"projects/driven-plexus-325011/topics/stock_prices_update"}
+            body:
+                messages:
+                - data: ${base64.encode(text.encode("stock_prices_updated"))}
+        next: returnOutput
+    - returnOutput:
+        return: ${FetchPriceRes.body}
