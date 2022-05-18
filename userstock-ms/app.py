@@ -67,7 +67,7 @@ def update_user_stock(user_id):
         return "No date_closed", 400
     # try to find the object, return status 400 is object_id is not correct
     try:
-        db.userstocks.find_one({"user_id": user_id, "date_closed": None)
+        db.userstocks.find_one({"user_id": user_id, "date_closed": None})
     except:
         return "No user_stock found", 400
 
