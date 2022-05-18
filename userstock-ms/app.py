@@ -67,12 +67,12 @@ def update_user_stock(user_id):
         return "No date_closed", 400
     # try to find the object, return status 400 is object_id is not correct
     try:
-        db.userstocks.find_one({"user_id": ObjectId(user_id), "date_closed": {"$ne": None}})
+        db.userstocks.find_one({"user_id": user_id, "date_closed": None)
     except:
         return "No user_stock found", 400
 
     # update object
-    db.userstocks.update_one({"user_id": ObjectId(user_id), "date_closed": {"$ne": None}}, {
+    db.userstocks.update_one({"user_id": user_id, "date_closed": None}, {
         "$set": {
             "date_closed": request_data["date_closed"],
             "close_price": request_data["close_price"]
