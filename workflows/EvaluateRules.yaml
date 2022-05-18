@@ -1,0 +1,89 @@
+main:
+    params: [event]
+    steps:
+    - initVariables:
+        assign:
+            - StocksURL: ${"http://35.238.145.147:5003"}
+            - UserStocksURL: ${"http://35.238.145.147:5001"}
+            - EvaluateURL: ${"https://us-central1-driven-plexus-325011.cloudfunctions.net/rule-evaluator"}
+            - TransactionURL: ${"http://35.238.145.147:5002"}
+            - TransactionList: []
+    - getStocks:
+        call: http.get
+        args:
+            url: ${StocksURL + "/stocks"}
+        result: GetStocksRes
+    - evaluateRules:
+        call: http.post
+        args:
+            url: ${EvaluateURL}
+            body: ${GetStocksRes.body}
+            auth:
+                type: OIDC
+        result: EvaluateRulesRes
+        next: SignalsLoop
+    - SignalsLoop:
+        for:
+            value: signal
+            in: ${EvaluateRulesRes.body}
+            steps:
+                - conditionalOnType:
+                    switch:
+                        - condition: ${signal.signal == -1}
+                          steps: 
+                            - GetUsers:
+                                call: http.get
+                                args:
+                                    url: ${UserStocksURL + "/get-users/" + signal.stock_id}
+                                result: GetUsersRes
+                                next: SellUsersLoop
+                            - SellUsersLoop:
+                                for: 
+                                    value: selluser
+                                    in: ${GetUsersRes.body}
+                                    steps:
+                                        - initSellTransaction:
+                                            assign: 
+                                                - SellTransaction:
+                                                    stock_id: ${signal.stock_id}
+                                                    user_id: ${selluser}
+                                                    transaction_type: ${"sell"}
+                                            next: AddSellTransaction
+                                        - AddSellTransaction:
+                                            assign: 
+                                                - TransactionList: ${list.concat(TransactionList, SellTransaction)}
+                        - condition: ${signal.signal == 1}
+                          steps:
+                            - CheckFunding:
+                                assign:
+                                    - UsersWithFunding: [1]
+                                next: BuyUsersLoop
+                            - BuyUsersLoop:
+                                for: 
+                                    value: buyuser
+                                    in: ${UsersWithFunding}
+                                    steps:
+                                        - initBuyTransaction:
+                                            assign:
+                                                - BuyTransaction:
+                                                    stock_id: ${signal.stock_id}
+                                                    user_id: ${buyuser}
+                                                    transaction_type: ${"buy"}
+                                            next: AddBuyTransaction
+                                        - AddBuyTransaction:
+                                            assign:
+                                                - TransactionList: ${list.concat(TransactionList, BuyTransaction)}
+        next: TransactionLoop
+    - TransactionLoop:
+        for: 
+            value: transaction
+            in: ${TransactionList}
+            steps:
+                - SendTransaction:
+                    call: http.post
+                    args:
+                        url: ${TransactionURL + "/create-transaction"}
+                        body: ${transaction}
+        next: returnOutput
+    - returnOutput:
+        return: ${EvaluateRulesRes.body}
