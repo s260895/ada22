@@ -1,17 +1,14 @@
-
 from flask import Flask, request, jsonify
 from database import db
 from bson import ObjectId
-from datetime import datetime
+
 
 app = Flask(__name__)
 
 
-@app.route("/user_stock", methods=["POST"])
+@app.route("/user_stocks", methods=["POST"])
 def create_user_stock():
-    '''
-    Endpoint to create user_stock
-    '''
+    """Endpoint to create user_stock"""
     body_data = request.get_json()
     # return status 400 if request contains no body
     if not body_data:
@@ -29,7 +26,7 @@ def create_user_stock():
     return data_object, 201
 
 
-@app.route("/user_stocks/all", methods=["GET"])
+@app.route("/user_stocks", methods=["GET"])
 def get_all_user_stocks():
     '''
     Endpoint to retrieve all user stocks
@@ -70,15 +67,12 @@ def update_user_stock(user_id):
         return "No date_closed", 400
     # try to find the object, return status 400 is object_id is not correct
     try:
-        user_stock = db.userstocks.find_one({
-            "user_id": ObjectId(user_id),
-            "date_closed": {"$ne": None}
-        })
+        db.userstocks.find_one({"user_id": ObjectId(user_id), "date_closed": {"$ne": None}})
     except:
         return "No user_stock found", 400
 
     # update object
-    db.userstocks.update_one({"user_id": ObjectId(user_id)}, {
+    db.userstocks.update_one({"user_id": ObjectId(user_id), "date_closed": {"$ne": None}}, {
         "$set": {
             "date_closed": request_data["date_closed"],
             "close_price": request_data["close_price"]
