@@ -16,7 +16,7 @@ def create_transaction(transaction_type, stock_id, user_id):
         "stock_id": stock_id,
         "user_id": user_id,
         "price": random() * 50000,
-        "datetime": datetime.now()
+        "datetime": datetime.timestamp(datetime.now())
     }
 
     data = json.dumps(data).encode("utf-8")
